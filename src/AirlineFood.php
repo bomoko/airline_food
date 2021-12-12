@@ -39,20 +39,37 @@ class AirlineFood
             $varName = $matches[1];
             $this->addVariable($this->createVariable($varName));
             return true;
-        } else {
-            if (preg_match(
-                "/^What\'s the deal with (.*)\?$/",
-                $line,
-                $matches
-              ) == 1) {
-                $varName = $matches[1];
-                $this->setSP(
-                  $this->addVariable($this->createVariable($varName))
-                );
-                return true;
-            }
+        }
+        if (preg_match(
+            "/^What\'s the deal with (.*)\?$/",
+            $line,
+            $matches
+          ) == 1) {
+            $varName = $matches[1];
+            $this->setSP(
+              $this->addVariable($this->createVariable($varName))
+            );
+            return true;
+        }
+
+        if (preg_match(
+            "/^Um\,$/",
+            $line
+          ) == 1) {
+            $this->decrementSP();
+            return true;
         }
         return false;
+    }
+
+    protected function decrementSP()
+    {
+        if($this->sp == self::EMPTY_STACK) {
+            throw new \Exception("Error: Stack has not yet been initialized");
+        }
+        if($this->sp > 0) {
+            $this->sp--;
+        }
     }
 
     protected function addVariable($variable)
