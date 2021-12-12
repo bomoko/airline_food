@@ -96,6 +96,50 @@ class AirlineFoodTest extends TestCase
         $this->assertTrue($debugInfo['sp'] == 1);
 
     }
+    /** @test */
+    public function itShouldYeahIncrementTheSP()
+    {
+        $af = new AirlineFood();
+        $debugInfo = $af->debug();
+
+        $this->assertTrue($debugInfo['sp'] == AirlineFood::EMPTY_STACK);
+        $command = "What's the deal with anime characters?";
+        $this->assertTrue($af->interpret($command));
+        $debugInfo = $af->debug();
+        $this->assertTrue($debugInfo['stack'][0]['name'] == "anime characters");
+        $this->assertTrue($debugInfo['sp'] == 0);
+
+        // Increment the stack with 1 item should still have sp == 0
+        $this->assertTrue($af->interpret("Yeah,"));
+        $debugInfo = $af->debug();
+        $this->assertTrue($debugInfo['sp'] == 0);
+
+        // Let's move the stack and then decrement
+        $af->interpret("You ever notice item1?");
+        $af->interpret("You ever notice item2?");
+        $debugInfo = $af->debug();
+        $this->assertTrue($debugInfo['sp'] == 0);
+        $this->assertTrue(count($debugInfo['stack']) == 3);
+
+        // Increment the stack with 3 should have sp == 1
+        $this->assertTrue($af->interpret("Yeah,"));
+        $debugInfo = $af->debug();
+        $this->assertTrue($debugInfo['sp'] == 1);
+
+        // Increment the stack with 3 should have sp == 2
+        $this->assertTrue($af->interpret("Yeah,"));
+        $debugInfo = $af->debug();
+        $this->assertTrue($debugInfo['sp'] == 2);
+
+        // Increment the stack with sp == 2 should have sp == 2
+        // Can't move over the end of the stack
+        $this->assertTrue($af->interpret("Yeah,"));
+        $debugInfo = $af->debug();
+        $this->assertTrue($debugInfo['sp'] == 2);
+
+    }
+
+
 
 
 }

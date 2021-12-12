@@ -59,6 +59,15 @@ class AirlineFood
             $this->decrementSP();
             return true;
         }
+
+        if (preg_match(
+            "/^Yeah\,$/",
+            $line
+          ) == 1) {
+            $this->incrementSP();
+            return true;
+        }
+
         return false;
     }
 
@@ -69,6 +78,16 @@ class AirlineFood
         }
         if($this->sp > 0) {
             $this->sp--;
+        }
+    }
+
+    protected function incrementSP()
+    {
+        if($this->sp == self::EMPTY_STACK) {
+            throw new \Exception("Error: Stack has not yet been initialized");
+        }
+        if($this->sp < count($this->stack) - 1) {
+            $this->sp++;
         }
     }
 
