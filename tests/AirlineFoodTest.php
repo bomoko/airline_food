@@ -94,8 +94,8 @@ class AirlineFoodTest extends TestCase
         $this->assertTrue($af->interpret("Um,"));
         $debugInfo = $af->debug();
         $this->assertTrue($debugInfo['sp'] == 1);
-
     }
+
     /** @test */
     public function itShouldYeahIncrementTheSP()
     {
@@ -172,11 +172,22 @@ class AirlineFoodTest extends TestCase
         $af->interpret("It's kinda like item2.");
         $debugInfo = $af->debug();
         $this->assertEquals(2, $debugInfo['stack'][0]['data']);
-
-
-
-
     }
 
+    /** @test */
+    public function itShouldLoadAndStepThroughAProgram()
+    {
+        $af = new AirlineFood();
+        $af->loadProgram(
+          [
+            "You ever notice item1?",
+            "You ever notice item2?"
+          ]
+        );
+
+        $debug = $af->step();
+        $this->assertEquals(1, count($debug['stack']));
+        $this->assertEquals(1, $debug['pc']);
+    }
 
 }

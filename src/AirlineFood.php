@@ -18,12 +18,58 @@ class AirlineFood
 
     protected $stack = [];
 
+    protected $program = [];
+
+    protected $pc = -1;
+
     /**
      * Stack pointed, the item we're currently pointing the stack at
      *
      * @var int
      */
     protected $sp = self::EMPTY_STACK;
+
+    /**
+     * Loads a program into memory.
+     *
+     * @param array $program
+     */
+    public function loadProgram(array $program)
+    {
+        $this->pc = 0;
+        $this->sp = 0;
+        $this->stack = [];
+        $this->program = $program;
+    }
+
+    /**
+     * This is primarily a debugging function
+     * It will run a single step in the program
+     * and can be used in combination with the debugger output
+     * which is returned.
+     */
+    public function step()
+    {
+        if ($this->pc == -1 || $this->sp == -1) {
+            throw new \Exception("Cannot step through program - uninitialized");
+        }
+        $this->interpret($this->program[$this->pc]);
+        return $this->debug();
+    }
+
+    protected function setPC($newPC)
+    {
+        if ($this->pc >= 0) {
+            $this->pc = $newPC;
+        }
+    }
+
+    protected function incrementPC()
+    {
+        if ($this->pc >= 0) {
+            $this->pc++;
+        }
+    }
 
     /**
      * This is the central interpreting function
@@ -38,6 +84,7 @@ class AirlineFood
         if (preg_match("/^You ever notice (.*)\?$/", $line, $matches) == 1) {
             $varName = $matches[1];
             $this->addVariable($this->createVariable($varName));
+            $this->incrementPC();
             return true;
         }
         if (preg_match(
@@ -49,6 +96,7 @@ class AirlineFood
             $this->setSP(
               $this->addVariable($this->createVariable($varName))
             );
+            $this->incrementPC();
             return true;
         }
 
@@ -57,6 +105,7 @@ class AirlineFood
             $line
           ) == 1) {
             $this->decrementSP();
+            $this->incrementPC();
             return true;
         }
 
@@ -65,21 +114,24 @@ class AirlineFood
             $line
           ) == 1) {
             $this->incrementSP();
+            $this->incrementPC();
             return true;
         }
         if (preg_match("/^Let's talk about (.*)\.$/", $line, $matches) == 1) {
             $varName = $matches[1];
             $this->setSpToVariable($varName);
+            $this->incrementPC();
             return true;
         }
 
         if (preg_match("/^It's kinda like (.*)\.$/", $line, $matches) == 1) {
             $varName = $matches[1];
             $index = $this->getIndexOfVariable($varName);
-            if($index == FALSE) {
+            if ($index == false) {
                 throw new \Exception("No variable of name {$varName} found.");
             }
             $this->stack[$this->sp]['data'] += $this->stack[$index]['data'];
+            $this->incrementPC();
             return true;
         }
 
@@ -88,10 +140,10 @@ class AirlineFood
 
     protected function decrementSP()
     {
-        if($this->sp == self::EMPTY_STACK) {
+        if ($this->sp == self::EMPTY_STACK) {
             throw new \Exception("Error: Stack has not yet been initialized");
         }
-        if($this->sp > 0) {
+        if ($this->sp > 0) {
             $this->sp--;
         }
     }
@@ -99,17 +151,19 @@ class AirlineFood
     protected function getIndexOfVariable($name)
     {
         foreach ($this->stack as $i => $v) {
-            if($v['name'] == $name) return $i;
+            if ($v['name'] == $name) {
+                return $i;
+            }
         }
-        return FALSE;
+        return false;
     }
 
     protected function incrementSP()
     {
-        if($this->sp == self::EMPTY_STACK) {
+        if ($this->sp == self::EMPTY_STACK) {
             throw new \Exception("Error: Stack has not yet been initialized");
         }
-        if($this->sp < count($this->stack) - 1) {
+        if ($this->sp < count($this->stack) - 1) {
             $this->sp++;
         }
     }
@@ -117,7 +171,7 @@ class AirlineFood
     protected function setSpToVariable($variable)
     {
         foreach ($this->stack as $k => $v) {
-            if($v['name'] == $variable) {
+            if ($v['name'] == $variable) {
                 $this->setSP($k);
                 return;
             }
@@ -160,6 +214,8 @@ class AirlineFood
         return [
           "stack" => $this->stack,
           "sp" => $this->sp,
+          "pc" => $this->pc,
+          "program" => $this->program,
         ];
     }
 
