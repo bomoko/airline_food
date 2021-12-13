@@ -151,9 +151,32 @@ class AirlineFoodTest extends TestCase
         $af->interpret("Let's talk about inc1.");
         $debugInfo = $af->debug();
         $this->assertTrue($debugInfo['sp'] == 0);
-
     }
 
+    /** @test */
+    public function itShouldAddToVariables()
+    {
+        $af = new AirlineFood();
+        //Add two new variables
+        // Let's move the stack and then decrement
+        $af->interpret("What's the deal with item1?");
+        $af->interpret("You ever notice item2?");
+        $debugInfo = $af->debug();
+        $this->assertEquals(0, $debugInfo['sp']);
+        $this->assertEquals(2, count($debugInfo['stack']));
+
+        // so we have 2 variables, item1 and item2, each initialized to 1
+        // sp->item1, and we want to add item2 to item1
+        // leaving us with the value 2 in item1
+
+        $af->interpret("It's kinda like item2.");
+        $debugInfo = $af->debug();
+        $this->assertEquals(2, $debugInfo['stack'][0]['data']);
+
+
+
+
+    }
 
 
 }

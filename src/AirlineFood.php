@@ -72,6 +72,17 @@ class AirlineFood
             $this->setSpToVariable($varName);
             return true;
         }
+
+        if (preg_match("/^It's kinda like (.*)\.$/", $line, $matches) == 1) {
+            $varName = $matches[1];
+            $index = $this->getIndexOfVariable($varName);
+            if($index == FALSE) {
+                throw new \Exception("No variable of name {$varName} found.");
+            }
+            $this->stack[$this->sp]['data'] += $this->stack[$index]['data'];
+            return true;
+        }
+
         return false;
     }
 
@@ -83,6 +94,14 @@ class AirlineFood
         if($this->sp > 0) {
             $this->sp--;
         }
+    }
+
+    protected function getIndexOfVariable($name)
+    {
+        foreach ($this->stack as $i => $v) {
+            if($v['name'] == $name) return $i;
+        }
+        return FALSE;
     }
 
     protected function incrementSP()
