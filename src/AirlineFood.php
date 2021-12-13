@@ -67,7 +67,11 @@ class AirlineFood
             $this->incrementSP();
             return true;
         }
-
+        if (preg_match("/^Let's talk about (.*)\.$/", $line, $matches) == 1) {
+            $varName = $matches[1];
+            $this->setSpToVariable($varName);
+            return true;
+        }
         return false;
     }
 
@@ -88,6 +92,16 @@ class AirlineFood
         }
         if($this->sp < count($this->stack) - 1) {
             $this->sp++;
+        }
+    }
+
+    protected function setSpToVariable($variable)
+    {
+        foreach ($this->stack as $k => $v) {
+            if($v['name'] == $variable) {
+                $this->setSP($k);
+                return;
+            }
         }
     }
 

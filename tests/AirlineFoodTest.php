@@ -136,9 +136,23 @@ class AirlineFoodTest extends TestCase
         $this->assertTrue($af->interpret("Yeah,"));
         $debugInfo = $af->debug();
         $this->assertTrue($debugInfo['sp'] == 2);
-
     }
 
+    /** @test */
+    public function itShouldTalkAboutX()
+    {
+        $af = new AirlineFood();
+        //Add two new variables
+        // Let's move the stack and then decrement
+        $af->interpret("What's the deal with inc1?");
+        $af->interpret("What's the deal with inc2?");
+        $debugInfo = $af->debug();
+        $this->assertTrue($debugInfo['sp'] == 1);
+        $af->interpret("Let's talk about inc1.");
+        $debugInfo = $af->debug();
+        $this->assertTrue($debugInfo['sp'] == 0);
+
+    }
 
 
 
