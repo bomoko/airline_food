@@ -239,14 +239,22 @@ class AirlineFoodTest extends TestCase
         $af = new AirlineFood();
         $af->loadProgram(
           [
-            "You ever notice item1?", //0
-            "So...",                  //1
-            "So...",                  //2 -- here we have a nested So, corresponds to like 5
-            "You ever notice item2?", //3
-            "You ever notice item3?", //4
-            "Moving on...",           //5
-            "You ever notice item4?", //6
-            "Moving on...",           //7
+            "You ever notice item1?",
+              //0
+            "So...",
+              //1
+            "So...",
+              //2 -- here we have a nested So, corresponds to like 5
+            "You ever notice item2?",
+              //3
+            "You ever notice item3?",
+              //4
+            "Moving on...",
+              //5
+            "You ever notice item4?",
+              //6
+            "Moving on...",
+              //7
           ]
         );
 
@@ -313,7 +321,49 @@ class AirlineFoodTest extends TestCase
         // has 1 as data and its corresponding `So...` is line 1
         $debug = $af->step();
         $this->assertEquals(1, $debug['pc']);
+    }
 
+    /** @test */
+    public function itShouldAcceptInput()
+    {
+        // So here, instead of reading from the user, we'll be popping
+        // off items from a stack - this should be replaceable with a function
+        // that reads from a stream
+        $dataStack = [5, 5, 5];
+        $dataStackPopper = function () use ($dataStack) {
+            return array_pop($dataStack);
+        };
+        $af = new AirlineFood($dataStackPopper);
+        $af->loadProgram(
+          [
+            "What's the deal with shouldendupfive?",
+            "Right?",
+          ]
+        );
+        $af->step();
+        $debug = $af->step();
+        $this->assertEquals(5, $debug['stack'][0]['data']);
+    }
+
+    /** @test */
+    public function itShouldWiteOutput()
+    {
+        $output = null;
+        $writeoutFunction = function ($data) use (&$output) {
+            $output = $data;
+        };
+        $af = new AirlineFood(null, $writeoutFunction);
+        $af->loadProgram(
+          [
+            "What's the deal with willbeone?",
+            "See?",
+          ]
+        );
+
+        $debug = $af->step();
+        $this->assertNull($output);
+        $debug = $af->step();
+        $this->assertEquals(1, $output);
     }
 
 }

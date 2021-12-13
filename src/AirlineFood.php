@@ -22,6 +22,35 @@ class AirlineFood
 
     protected $pc = -1;
 
+    protected $readIn = null;
+
+    protected $writeOut = null;
+
+    public function __construct($readIn = null, $writeOut = null)
+    {
+        // we'll provide a default implementation for reading in
+
+        if (is_null($readIn)) {
+            $this->readIn = function () {
+                return 0;
+            };
+        } elseif (!is_callable($readIn)) {
+            throw new \Exception("Argument for constructor expects a callable");
+        } else {
+            $this->readIn = $readIn;
+        }
+
+        if (is_null($writeOut)) {
+            $this->writeOut = function ($data) {
+                print($data);
+            };
+        } elseif (!is_callable($writeOut)) {
+            throw new \Exception("Argument for constructor expects a callable");
+        } else {
+            $this->writeOut = $writeOut;
+        }
+    }
+
     /**
      * Stack pointed, the item we're currently pointing the stack at
      *
@@ -157,8 +186,8 @@ class AirlineFood
             return true;
         }
 
-        if (preg_match("/^So.../", $line, $matches) == 1) {
-            if($this->stack[$this->sp]['data'] == 0) {
+        if (preg_match("/^So...$/", $line, $matches) == 1) {
+            if ($this->stack[$this->sp]['data'] == 0) {
                 $targetPC = $this->findMatchingMovingOn($this->pc);
                 $this->setPC($targetPC);
             } else {
@@ -167,14 +196,24 @@ class AirlineFood
             return true;
         }
 
-        if (preg_match("/^Moving on.../", $line, $matches) == 1) {
-            if($this->stack[$this->sp]['data'] != 0) {
+        if (preg_match("/^Moving on...$/", $line, $matches) == 1) {
+            if ($this->stack[$this->sp]['data'] != 0) {
                 $targetPC = $this->findMatchingSo($this->pc);
                 $this->setPC($targetPC);
             } else {
                 $this->incrementPC();
             }
             return true;
+        }
+
+        if (preg_match("/^Right\?$/", $line, $matches) == 1) {
+            $this->stack[$this->sp]['data'] = ($this->readIn)();
+            $this->incrementPC();
+        }
+
+        if (preg_match("/^See\?$/", $line, $matches) == 1) {
+            ($this->writeOut)($this->stack[$this->sp]['data']);
+            $this->incrementPC();
         }
 
         return false;
@@ -193,14 +232,16 @@ class AirlineFood
             if ($line == "So...") {
                 $numberInterimSos++;
             } elseif ($line == "Moving on...") {
-                if($numberInterimSos > 0) {
+                if ($numberInterimSos > 0) {
                     $numberInterimSos--;
                 } else {
                     return $i;
                 }
             }
         }
-        throw new \Exception("Syntax Error: No matching 'Moving on...' for 'So...' line {$soLineNumber}");
+        throw new \Exception(
+          "Syntax Error: No matching 'Moving on...' for 'So...' line {$soLineNumber}"
+        );
     }
 
     protected function findMatchingSo($moLineNumber)
@@ -217,14 +258,16 @@ class AirlineFood
             if ($line == "Moving on...") {
                 $numberInterimMos++;
             } elseif ($line == "So...") {
-                if($numberInterimMos > 0) {
+                if ($numberInterimMos > 0) {
                     $numberInterimMos--;
                 } else {
                     return $i;
                 }
             }
         }
-        throw new \Exception("Syntax Error: No matching 'So...' for 'Moving on...' line {$moLineNumber}");
+        throw new \Exception(
+          "Syntax Error: No matching 'So...' for 'Moving on...' line {$moLineNumber}"
+        );
     }
 
     protected function decrementSP()
@@ -291,7 +334,8 @@ class AirlineFood
 
     protected function createVariable($name)
     {
-        return ["name" => trim($name), "data" => self::DEFAULTVARDATA];
+        $varName = $name == "airline food" ? null : trim($name);
+        return ["name" => $varName, "data" => self::DEFAULTVARDATA];
     }
 
     /**
