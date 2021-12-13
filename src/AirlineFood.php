@@ -135,7 +135,96 @@ class AirlineFood
             return true;
         }
 
+        if (preg_match("/^Not like (.*)\.$/", $line, $matches) == 1) {
+            $varName = $matches[1];
+            $index = $this->getIndexOfVariable($varName);
+            if ($index == false) {
+                throw new \Exception("No variable of name {$varName} found.");
+            }
+            $this->stack[$this->sp]['data'] -= $this->stack[$index]['data'];
+            $this->incrementPC();
+            return true;
+        }
+
+        if (preg_match("/^Just like (.*)\.$/", $line, $matches) == 1) {
+            $varName = $matches[1];
+            $index = $this->getIndexOfVariable($varName);
+            if ($index == false) {
+                throw new \Exception("No variable of name {$varName} found.");
+            }
+            $this->stack[$this->sp]['data'] *= $this->stack[$index]['data'];
+            $this->incrementPC();
+            return true;
+        }
+
+        if (preg_match("/^So.../", $line, $matches) == 1) {
+            if($this->stack[$this->sp]['data'] == 0) {
+                $targetPC = $this->findMatchingMovingOn($this->pc);
+                $this->setPC($targetPC);
+            } else {
+                $this->incrementPC();
+            }
+            return true;
+        }
+
+        if (preg_match("/^Moving on.../", $line, $matches) == 1) {
+            if($this->stack[$this->sp]['data'] != 0) {
+                $targetPC = $this->findMatchingSo($this->pc);
+                $this->setPC($targetPC);
+            } else {
+                $this->incrementPC();
+            }
+            return true;
+        }
+
         return false;
+    }
+
+    protected function findMatchingMovingOn($soLineNumber)
+    {
+        //first let's check that this line is _actually_ a "So..."
+        if ($this->program[$soLineNumber] != "So...") {
+            throw new \Exception("Line {$soLineNumber} is not a 'So...'");
+        }
+        $numberInterimSos = 0; //if there are any other "So..."s, we need to
+        // ignore them and their corresponding "Moving On..."s
+        for ($i = $soLineNumber + 1; $i < count($this->program); $i++) {
+            $line = $this->program[$i];
+            if ($line == "So...") {
+                $numberInterimSos++;
+            } elseif ($line == "Moving on...") {
+                if($numberInterimSos > 0) {
+                    $numberInterimSos--;
+                } else {
+                    return $i;
+                }
+            }
+        }
+        throw new \Exception("Syntax Error: No matching 'Moving on...' for 'So...' line {$soLineNumber}");
+    }
+
+    protected function findMatchingSo($moLineNumber)
+    {
+        //first let's check that this line is _actually_ a "So..."
+        if ($this->program[$moLineNumber] != "Moving on...") {
+            throw new \Exception("Line {$moLineNumber} is not a 'So...'");
+        }
+        $numberInterimMos = 0; //if there are any other "So..."s, we need to
+        // ignore them and their corresponding "Moving On..."s
+        for ($i = $moLineNumber - 1; $i >= 0; $i--) {
+            $line = $this->program[$i];
+
+            if ($line == "Moving on...") {
+                $numberInterimMos++;
+            } elseif ($line == "So...") {
+                if($numberInterimMos > 0) {
+                    $numberInterimMos--;
+                } else {
+                    return $i;
+                }
+            }
+        }
+        throw new \Exception("Syntax Error: No matching 'So...' for 'Moving on...' line {$moLineNumber}");
     }
 
     protected function decrementSP()
@@ -203,6 +292,25 @@ class AirlineFood
     protected function createVariable($name)
     {
         return ["name" => trim($name), "data" => self::DEFAULTVARDATA];
+    }
+
+    /**
+     * Allows debuggers to set program state
+     */
+    public function setState(array $state)
+    {
+        if (!empty($state['pc'])) {
+            $this->pc = $state['pc'];
+        }
+        if (!empty($state['sp'])) {
+            $this->sp = $state['sp'];
+        }
+        if (!empty($state['stack'])) {
+            $this->stack = $state['stack'];
+        }
+        if (!empty($state['program'])) {
+            $this->program = $state['program'];
+        }
     }
 
     /**
